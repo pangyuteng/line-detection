@@ -351,14 +351,6 @@ config:
         - 0
         - {}
     name: batch_normalization_4
-  - class_name: Dropout
-    config: {name: dropout_4, noise_shape: null, rate: 0.25, seed: null, trainable: true}
-    inbound_nodes:
-    - - - batch_normalization_4
-        - 0
-        - 0
-        - {}
-    name: dropout_4
   - class_name: Flatten
     config: {data_format: channels_last, name: flatten_1, trainable: true}
     inbound_nodes:
@@ -367,6 +359,38 @@ config:
         - 0
         - {}
     name: flatten_1
+  - class_name: Dropout
+    config: {name: dropout_4, noise_shape: null, rate: 0.25, seed: null, trainable: true}
+    inbound_nodes:
+    - - - batch_normalization_4
+        - 0
+        - 0
+        - {}
+    name: dropout_4
+  - class_name: Dense
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_1
+      trainable: true
+      units: 32
+      use_bias: true
+    inbound_nodes:
+    - - - flatten_1
+        - 0
+        - 0
+        - {}
+    name: dense_1
   - class_name: Flatten
     config: {data_format: channels_last, name: flatten_2, trainable: true}
     inbound_nodes:
@@ -405,30 +429,14 @@ config:
         - 0
         - {}
     name: conv2d_transpose_2
-  - class_name: Dense
-    config:
-      activation: linear
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_1
-      trainable: true
-      units: 32
-      use_bias: true
+  - class_name: Activation
+    config: {activation: relu, name: activation_7, trainable: true}
     inbound_nodes:
-    - - - flatten_1
+    - - - dense_1
         - 0
         - 0
         - {}
-    name: dense_1
+    name: activation_7
   - class_name: Dense
     config:
       activation: linear
@@ -461,53 +469,6 @@ config:
         - 0
         - {}
     name: activation_5
-  - class_name: Activation
-    config: {activation: relu, name: activation_7, trainable: true}
-    inbound_nodes:
-    - - - dense_1
-        - 0
-        - 0
-        - {}
-    name: activation_7
-  - class_name: Activation
-    config: {activation: relu, name: activation_9, trainable: true}
-    inbound_nodes:
-    - - - dense_6
-        - 0
-        - 0
-        - {}
-    name: activation_9
-  - class_name: BatchNormalization
-    config:
-      axis: -1
-      beta_constraint: null
-      beta_initializer:
-        class_name: Zeros
-        config: {}
-      beta_regularizer: null
-      center: true
-      epsilon: 0.001
-      gamma_constraint: null
-      gamma_initializer:
-        class_name: Ones
-        config: {}
-      gamma_regularizer: null
-      momentum: 0.99
-      moving_mean_initializer:
-        class_name: Zeros
-        config: {}
-      moving_variance_initializer:
-        class_name: Ones
-        config: {}
-      name: batch_normalization_5
-      scale: true
-      trainable: true
-    inbound_nodes:
-    - - - activation_5
-        - 0
-        - 0
-        - {}
-    name: batch_normalization_5
   - class_name: BatchNormalization
     config:
       axis: -1
@@ -539,6 +500,53 @@ config:
         - 0
         - {}
     name: batch_normalization_7
+  - class_name: Activation
+    config: {activation: relu, name: activation_12, trainable: true}
+    inbound_nodes:
+    - - - dense_6
+        - 0
+        - 0
+        - {}
+    name: activation_12
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: batch_normalization_5
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - activation_5
+        - 0
+        - 0
+        - {}
+    name: batch_normalization_5
+  - class_name: Dropout
+    config: {name: dropout_7, noise_shape: null, rate: 0.25, seed: null, trainable: true}
+    inbound_nodes:
+    - - - batch_normalization_7
+        - 0
+        - 0
+        - {}
+    name: dropout_7
   - class_name: BatchNormalization
     config:
       axis: -1
@@ -565,7 +573,7 @@ config:
       scale: true
       trainable: true
     inbound_nodes:
-    - - - activation_9
+    - - - activation_12
         - 0
         - 0
         - {}
@@ -578,14 +586,30 @@ config:
         - 0
         - {}
     name: dropout_5
-  - class_name: Dropout
-    config: {name: dropout_7, noise_shape: null, rate: 0.25, seed: null, trainable: true}
+  - class_name: Dense
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_2
+      trainable: true
+      units: 32
+      use_bias: true
     inbound_nodes:
-    - - - batch_normalization_7
+    - - - dropout_7
         - 0
         - 0
         - {}
-    name: dropout_7
+    name: dense_2
   - class_name: Dropout
     config: {name: dropout_9, noise_shape: null, rate: 0.25, seed: null, trainable: true}
     inbound_nodes:
@@ -624,30 +648,14 @@ config:
         - 0
         - {}
     name: conv2d_transpose_3
-  - class_name: Dense
-    config:
-      activation: linear
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_2
-      trainable: true
-      units: 32
-      use_bias: true
+  - class_name: Activation
+    config: {activation: relu, name: activation_8, trainable: true}
     inbound_nodes:
-    - - - dropout_7
+    - - - dense_2
         - 0
         - 0
         - {}
-    name: dense_2
+    name: activation_8
   - class_name: Dense
     config:
       activation: linear
@@ -680,53 +688,6 @@ config:
         - 0
         - {}
     name: activation_6
-  - class_name: Activation
-    config: {activation: relu, name: activation_8, trainable: true}
-    inbound_nodes:
-    - - - dense_2
-        - 0
-        - 0
-        - {}
-    name: activation_8
-  - class_name: Activation
-    config: {activation: relu, name: activation_10, trainable: true}
-    inbound_nodes:
-    - - - dense_7
-        - 0
-        - 0
-        - {}
-    name: activation_10
-  - class_name: BatchNormalization
-    config:
-      axis: -1
-      beta_constraint: null
-      beta_initializer:
-        class_name: Zeros
-        config: {}
-      beta_regularizer: null
-      center: true
-      epsilon: 0.001
-      gamma_constraint: null
-      gamma_initializer:
-        class_name: Ones
-        config: {}
-      gamma_regularizer: null
-      momentum: 0.99
-      moving_mean_initializer:
-        class_name: Zeros
-        config: {}
-      moving_variance_initializer:
-        class_name: Ones
-        config: {}
-      name: batch_normalization_6
-      scale: true
-      trainable: true
-    inbound_nodes:
-    - - - activation_6
-        - 0
-        - 0
-        - {}
-    name: batch_normalization_6
   - class_name: BatchNormalization
     config:
       axis: -1
@@ -758,6 +719,53 @@ config:
         - 0
         - {}
     name: batch_normalization_8
+  - class_name: Activation
+    config: {activation: relu, name: activation_13, trainable: true}
+    inbound_nodes:
+    - - - dense_7
+        - 0
+        - 0
+        - {}
+    name: activation_13
+  - class_name: BatchNormalization
+    config:
+      axis: -1
+      beta_constraint: null
+      beta_initializer:
+        class_name: Zeros
+        config: {}
+      beta_regularizer: null
+      center: true
+      epsilon: 0.001
+      gamma_constraint: null
+      gamma_initializer:
+        class_name: Ones
+        config: {}
+      gamma_regularizer: null
+      momentum: 0.99
+      moving_mean_initializer:
+        class_name: Zeros
+        config: {}
+      moving_variance_initializer:
+        class_name: Ones
+        config: {}
+      name: batch_normalization_6
+      scale: true
+      trainable: true
+    inbound_nodes:
+    - - - activation_6
+        - 0
+        - 0
+        - {}
+    name: batch_normalization_6
+  - class_name: Dropout
+    config: {name: dropout_8, noise_shape: null, rate: 0.25, seed: null, trainable: true}
+    inbound_nodes:
+    - - - batch_normalization_8
+        - 0
+        - 0
+        - {}
+    name: dropout_8
   - class_name: BatchNormalization
     config:
       axis: -1
@@ -784,7 +792,7 @@ config:
       scale: true
       trainable: true
     inbound_nodes:
-    - - - activation_10
+    - - - activation_13
         - 0
         - 0
         - {}
@@ -797,14 +805,78 @@ config:
         - 0
         - {}
     name: dropout_6
-  - class_name: Dropout
-    config: {name: dropout_8, noise_shape: null, rate: 0.25, seed: null, trainable: true}
+  - class_name: Dense
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_3
+      trainable: true
+      units: 2
+      use_bias: true
     inbound_nodes:
-    - - - batch_normalization_8
+    - - - dropout_8
         - 0
         - 0
         - {}
-    name: dropout_8
+    name: dense_3
+  - class_name: Dense
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_4
+      trainable: true
+      units: 2
+      use_bias: true
+    inbound_nodes:
+    - - - dropout_8
+        - 0
+        - 0
+        - {}
+    name: dense_4
+  - class_name: Dense
+    config:
+      activation: linear
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: VarianceScaling
+        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
+      kernel_regularizer: null
+      name: dense_5
+      trainable: true
+      units: 2
+      use_bias: true
+    inbound_nodes:
+    - - - dropout_8
+        - 0
+        - 0
+        - {}
+    name: dense_5
   - class_name: Dropout
     config: {name: dropout_10, noise_shape: null, rate: 0.25, seed: null, trainable: true}
     inbound_nodes:
@@ -929,78 +1001,30 @@ config:
         - 0
         - {}
     name: conv2d_7
-  - class_name: Dense
-    config:
-      activation: linear
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_3
-      trainable: true
-      units: 2
-      use_bias: true
+  - class_name: Activation
+    config: {activation: linear, name: activation_9, trainable: true}
     inbound_nodes:
-    - - - dropout_8
+    - - - dense_3
         - 0
         - 0
         - {}
-    name: dense_3
-  - class_name: Dense
-    config:
-      activation: linear
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_4
-      trainable: true
-      units: 2
-      use_bias: true
+    name: activation_9
+  - class_name: Activation
+    config: {activation: linear, name: activation_10, trainable: true}
     inbound_nodes:
-    - - - dropout_8
+    - - - dense_4
         - 0
         - 0
         - {}
-    name: dense_4
-  - class_name: Dense
-    config:
-      activation: linear
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_5
-      trainable: true
-      units: 2
-      use_bias: true
+    name: activation_10
+  - class_name: Activation
+    config: {activation: linear, name: activation_11, trainable: true}
     inbound_nodes:
-    - - - dropout_8
+    - - - dense_5
         - 0
         - 0
         - {}
-    name: dense_5
+    name: activation_11
   - class_name: Dense
     config:
       activation: linear
@@ -1057,26 +1081,65 @@ config:
         - 0
         - {}
     name: line_mask
-  - class_name: Activation
-    config: {activation: sigmoid, name: carina_coord, trainable: true}
+  - class_name: Lambda
+    config:
+      arguments: {}
+      function: !!python/tuple ['4wEAAAAAAAAAAQAAAAQAAABTAAAAcw4AAAB0AGoBfABkAWQCgwNTACkDTukAAAAA6QEAAAApAtoB
+
+          S9oEY2xpcCkB2gF4qQByBgAAAPopL21lZGlhL2V4dGVybmFsL3NjaXNvZnQvdHViZS1jYWQvbW9k
+
+          ZWwucHnaCDxsYW1iZGE+ZgAAAPMAAAAA
+
+          ', null, null]
+      function_type: lambda
+      name: carina_coord
+      output_shape: null
+      output_shape_type: raw
+      trainable: true
     inbound_nodes:
-    - - - dense_3
+    - - - activation_9
         - 0
         - 0
         - {}
     name: carina_coord
-  - class_name: Activation
-    config: {activation: sigmoid, name: start_cood, trainable: true}
+  - class_name: Lambda
+    config:
+      arguments: {}
+      function: !!python/tuple ['4wEAAAAAAAAAAQAAAAQAAABTAAAAcw4AAAB0AGoBfABkAWQCgwNTACkDTukAAAAA6QEAAAApAtoB
+
+          S9oEY2xpcCkB2gF4qQByBgAAAPopL21lZGlhL2V4dGVybmFsL3NjaXNvZnQvdHViZS1jYWQvbW9k
+
+          ZWwucHnaCDxsYW1iZGE+awAAAPMAAAAA
+
+          ', null, null]
+      function_type: lambda
+      name: start_cood
+      output_shape: null
+      output_shape_type: raw
+      trainable: true
     inbound_nodes:
-    - - - dense_4
+    - - - activation_10
         - 0
         - 0
         - {}
     name: start_cood
-  - class_name: Activation
-    config: {activation: sigmoid, name: end_coord, trainable: true}
+  - class_name: Lambda
+    config:
+      arguments: {}
+      function: !!python/tuple ['4wEAAAAAAAAAAQAAAAQAAABTAAAAcw4AAAB0AGoBfABkAWQCgwNTACkDTukAAAAA6QEAAAApAtoB
+
+          S9oEY2xpcCkB2gF4qQByBgAAAPopL21lZGlhL2V4dGVybmFsL3NjaXNvZnQvdHViZS1jYWQvbW9k
+
+          ZWwucHnaCDxsYW1iZGE+cAAAAPMAAAAA
+
+          ', null, null]
+      function_type: lambda
+      name: end_coord
+      output_shape: null
+      output_shape_type: raw
+      trainable: true
     inbound_nodes:
-    - - - dense_5
+    - - - activation_11
         - 0
         - 0
         - {}
