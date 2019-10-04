@@ -124,3 +124,108 @@ def make_one_sample(isplot=False,fignum=0,nx=256,ny=256,baseimage=None,minlen=50
     return myimage, container
 
 
+def get_grid(szs=(64,64,64),sms=(8,8)):
+    szx,szy,szz=szs
+    smx,smy=sms
+    grid = np.zeros((szx,szy)).astype(np.uint)
+
+    # assign grid id.
+    anchor_dict={}
+    for x in range(szx):
+        for y in range(szy):
+            px = x//smx
+            py = y//smy
+            code = py + smx*px
+            if code not in anchor_dict.keys():
+                anchor_dict[code]=(x,y)
+            grid[x,y]=code
+
+    #plt.imshow(grid)
+    #print(np.unique(grid))
+    return grid, anchor_dict
+
+def make_data(N=5,szs=(64,64,64),sms=(8,8)):
+    
+    szx,szy,szz = szs
+    smx,smy = sms
+
+    grid, anchor_dict = get_grid(szs=szs,sms=sms)
+    X0 = np.zeros((N,szx,szy)).astype(np.uint8)
+    Y0 = np.zeros((N,szz,5)).astype(np.float)
+    Y1 = np.zeros((N,szx,szy,szz)).astype(np.uint8)
+
+    c=0
+    for n in range(N*100):
+        try:
+            # make random line
+            terrain, container = make_one_sample(nx=64,ny=64,minlen=10)
+            # rescale input image
+            terrain = (255*(terrain-np.max(terrain))/(np.max(terrain)-np.min(terrain))).astype(np.uint8)
+            # for each line
+            for row in container:
+                # get mask and end points
+                mask=row['mask'].astype(np.uint8)
+                endpoints = np.array(row['endpoints']).astype(np.int)
+                x0,y0=endpoints[0,:]
+                x1,y1=endpoints[1,:]
+                # ensure end points in line
+                #assert(mask[x0,y0]==1 and mask[x1,y1]==1)
+
+                istube=1
+                # find min max point
+                mask_indices = np.argwhere(mask>0)
+
+                minx=np.min(mask_indices[:,0])
+                miny=np.min(mask_indices[:,1])
+
+                maxx=np.max(mask_indices[:,0])
+                maxy=np.max(mask_indices[:,1])
+                
+                midx = (minx+maxx)/2.
+                midy = (miny+maxy)/2.
+                
+                aindx=(midx).astype(np.int)
+                aindy=(midy).astype(np.int)
+                
+                ind = grid[aindx,aindy]
+                # get anchor in grid
+                anchorx,anchory=anchor_dict[ind]
+                
+                # relative mid
+                midx = midx-anchorx
+                midy = midy-anchory
+                
+                # width
+                widthx = maxx-minx
+                widthy = maxy-miny
+                
+                # scale
+                midx /= szx
+                midy /= szy
+                widthx /= szx
+                widthy /= szy
+                
+                yolo = np.array([midx,midy,widthx,widthy,istube])
+                #print(yolo)
+                
+                Y0[c,ind,:]=yolo
+                Y1[c,ind,:,:]=mask
+            
+            X0[c,:,:]=terrain
+        
+        except:
+            #traceback.print_exc()
+            
+            if c >= N:
+                break
+            X0[c,...]=0
+            Y0[c,...]=0
+            Y1[c,...]=0
+        
+        if c>=N:
+            break
+        
+        c+=1
+
+    X0 = np.expand_dims(X0,axis=-1)
+    return X0,Y0,Y1
