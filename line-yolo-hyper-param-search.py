@@ -243,14 +243,14 @@ def create_model(x_train, y_train, x_test, y_test):
     return {'loss': loss, 'status': STATUS_OK, 'model': model}
 
 def data():
-    x_train, y_train, _ = make_data(N=50)
-    x_test, y_test, _ = make_data(N=10)
+    x_train, y_train, _ = make_data(N=1024)
+    x_test, y_test, _ = make_data(N=128)
     return x_train, y_train, x_test, y_test
 
 best_run, best_model = optim.minimize(model=create_model,
                                       data=data,
                                       algo=tpe.suggest,
-                                      max_evals=5,
+                                      max_evals=50,
                                       trials=Trials(),
                                       notebook_name='proto-line-detect-yolo')
 x_train,y_train,x_val,y_val=data()
