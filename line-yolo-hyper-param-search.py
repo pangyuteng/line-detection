@@ -164,34 +164,25 @@ def create_model(x_train, y_train, x_test, y_test):
     inputs = Input(shape=(szx,szy,1))
     
     dropoutrate = {{uniform(0, 0.5)}}
-    # down sample
     xd = conv_batch_lrelu(inputs, {{choice([16,32,64,128])}}, 3)
     xd=Dropout(dropoutrate)(xd)
-    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
-    xd=Dropout(dropoutrate)(xd)
-    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
-    xd=Dropout(dropoutrate)(xd)
-    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
-    xd=Dropout(dropoutrate)(xd)
-
+    # down sample
+    for _ in range({{choice([2,3,4])}}):
+        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
+        xd=Dropout(dropoutrate)(xd)
+    
     # bottle neck
     x=Flatten()(xd)
-    x=Dense({{choice([16,32,64,128,256])}},
-        kernel_regularizer=regularizers.l2(0.0005),
-        kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
-        use_bias=False,
-        )(x) # # filter size ratio between conv and dense needs to be tuned!
-    x=BatchNormalization()(x)
-    x=LeakyReLU(alpha=0.1)(x)
-    x=Dropout(dropoutrate)(x)
-    x=Dense({{choice([16,32,64,128,256])}},
-        kernel_regularizer=regularizers.l2(0.0005),
-        kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
-        use_bias=False,
-        )(x)
-    x=BatchNormalization()(x)
-    x=LeakyReLU(alpha=0.1)(x)
-    x=Dropout(dropoutrate)(x) # attempt to prevent overfit...
+    for _ in range({{choice([1,2,3,4])}}):
+        x=Dense({{choice([16,32,64,128,256])}},
+            kernel_regularizer=regularizers.l2(0.0005),
+            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+            use_bias=False,
+            )(x) # # filter size ratio between conv and dense needs to be tuned!
+        x=BatchNormalization()(x)
+        x=LeakyReLU(alpha=0.1)(x)
+        x=Dropout(dropoutrate)(x) # attempt to prevent overfit...
+
     x=Dense(smx*smy*5,
         kernel_regularizer=regularizers.l2(0.0005),
         kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
