@@ -154,43 +154,43 @@ def create_model_fcnn(x_train, y_train, x_test, y_test):
 
     inputs = Input(shape=(szx,szy,1))
     xd = inputs
-    for _ in range({{choice([0,1,2,3,4])}}):
-        xd = conv_batch_lrelu(xd, {{choice([8,16,32,64,128])}}, 3)
-        xd = conv_batch_lrelu(xd, {{choice([8,16,32,64,128])}}, 1)
+    for _ in range({{choice([0,1,])}}):
+        xd = conv_batch_lrelu(xd, {{choice([8,16,32])}}, 3)
+        xd = conv_batch_lrelu(xd, {{choice([8,16,32])}}, 1)
         xd=Dropout({{uniform(0, 0.5)}})(xd)
-    xd = conv_batch_lrelu(xd, {{choice([8,16,32,64,128])}}, 3)
+    xd = conv_batch_lrelu(xd, {{choice([8,16,32])}}, 3)
     xd = MaxPooling2D(pool_size=(2, 2),strides=2)(xd)    
     # ^^^ output size 32x32
     xd=Dropout({{uniform(0, 0.5)}})(xd)
 
-    for _ in range({{choice([0,1,2,3,4])}}):
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 1)
+    for _ in range({{choice([0,1,2])}}):
+        xd = conv_batch_lrelu(xd, {{choice([16,32,64])}}, 3)
+        xd = conv_batch_lrelu(xd, {{choice([16,32,64])}}, 1)
         xd=Dropout({{uniform(0, 0.5)}})(xd)
     xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
     xd = MaxPooling2D(pool_size=(2, 2),strides=2)(xd)
     # ^^^ output size 16x16
     xd=Dropout({{uniform(0, 0.5)}})(xd)
     
-    for _ in range({{choice([0,1,2,3,4])}}):
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 1)
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
+    for _ in range({{choice([0,1,2])}}):
+        xd = conv_batch_lrelu(xd, {{choice([32,64,128])}}, 3)
+        xd = conv_batch_lrelu(xd, {{choice([32,64,128])}}, 1)
+        xd = conv_batch_lrelu(xd, {{choice([32,64,128])}}, 3)
     xd = MaxPooling2D(pool_size=(2, 2),strides=2)(xd)
     # ^^^ output size 8x8
     xd=Dropout({{uniform(0, 0.5)}})(xd)
     
-    for _ in range({{choice([0,1,2,3,4])}}):
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128,256])}}, 3)
-        xd = conv_batch_lrelu(xd, {{choice([16,32,64,128,256])}}, 1)
+    for _ in range({{choice([1,2])}}):
+        xd = conv_batch_lrelu(xd, {{choice([64,128,256])}}, 3)
+        xd = conv_batch_lrelu(xd, {{choice([64,128,256])}}, 1)
         xd=Dropout({{uniform(0, 0.5)}})(xd)
-    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128,256])}}, 3)
+    xd = conv_batch_lrelu(xd, {{choice([32,64,128,256])}}, 3)
     xd = Conv2D(5, (1, 1), strides=1, padding='same',use_bias=False)(xd)                        
     vecs=Activation('sigmoid')(xd)
 
     model = Model(inputs=inputs, outputs=vecs)
 
-    batch_size={{choice([8,16,32,64,128,256])}}
+    batch_size={{choice([8,16,32,64,128])}}
     epochs=50
     lr={{uniform(1E-5,1E-3)}}
     decay={{uniform(1E-8,1E-2)}}
