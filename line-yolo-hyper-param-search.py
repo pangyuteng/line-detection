@@ -57,7 +57,7 @@ from hyperopt.hp import qnormal
 from hyperopt.hp import lognormal
 from hyperopt.hp import qlognormal
 
-def create_model(x_train, y_train, x_test, y_test):
+def create_model_fcnn(x_train, y_train, x_test, y_test):
     szx,szy=64,64
     smx,smy=8,8
     epsilon = 1E-8
@@ -121,9 +121,174 @@ def create_model(x_train, y_train, x_test, y_test):
 
     def vec_loss(y_true, y_pred):
 
-        lambda_obj = {{uniform(0,10)}}
-        lambda_coord = {{uniform(0,10)}}
-        lambda_iou = {{uniform(0,10)}}
+        lambda_obj = 1.0
+        lambda_coord = 1.0
+        lambda_iou = 1.0
+
+        obj_loss = compute_obj_loss(y_true, y_pred)
+        obj_loss = tf.multiply(lambda_obj,obj_loss)
+
+        coord_loss = compute_coord_loss(y_true, y_pred)
+        coord_loss = tf.multiply(lambda_coord,coord_loss)
+
+        iou_loss = compute_iou_loss(y_true, y_pred)
+        iou_loss = tf.multiply(lambda_iou,iou_loss)
+
+        total_loss = tf.add(tf.add(obj_loss,coord_loss),iou_loss)
+
+        return tf.reduce_mean(total_loss)
+
+
+    def conv_batch_lrelu(input_tensor, numfilter, dim, strides=2):
+        # https://github.com/guigzzz/Keras-Yolo-v2/blob/f61286371cdc2d470e0811234f552c70bbd5caba/yolo_layer_utils.py#L18
+        input_tensor = Conv2D(numfilter, (dim, dim), strides=strides, padding='same',
+                            kernel_regularizer=regularizers.l2(0.0005),
+                            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+                            use_bias=False
+                        )(input_tensor)
+        input_tensor = BatchNormalization()(input_tensor)
+        return LeakyReLU(alpha=0.1)(input_tensor)
+
+    def convt_batch_lrelu(input_tensor, numfilter, dim, strides=2):
+        input_tensor = Conv2DTranspose(numfilter, (dim, dim), strides=strides, padding='same',
+                            kernel_regularizer=regularizers.l2(0.0005),
+                            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+                            use_bias=False
+                        )(input_tensor)
+        input_tensor = BatchNormalization()(input_tensor)
+        return LeakyReLU(alpha=0.1)(input_tensor)
+
+    MASK = 'MASK'
+    VECTOR = 'VECTOR'
+
+    inputs = Input(shape=(szx,szy,1))
+    
+    dropoutrate = {{uniform(0, 0.5)}}
+    # down sample
+    xd = conv_batch_lrelu(inputs, {{choice([16,32,64,128])}}, 3)
+    xd=Dropout(dropoutrate)(xd)
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
+    xd=Dropout(dropoutrate)(xd)
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3)
+    xd=Dropout(dropoutrate)(xd)
+
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3,strides=1)
+    xd = Conv2D({{choice([16,32,64,128])}}, (1,1), strides=1, padding='same',
+                            kernel_regularizer=regularizers.l2(0.0005),
+                            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+                            use_bias=False)(xd)
+    xd=Dropout(dropoutrate)(xd)
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3,strides=1)
+    xd=Dropout(dropoutrate)(xd)
+    xd = Conv2D({{choice([16,32,64,128])}}, (1, 1), strides=1, padding='same',
+                            kernel_regularizer=regularizers.l2(0.0005),
+                            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+                            use_bias=False)(xd)
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3,strides=1)
+    xd=Dropout(dropoutrate)(xd)
+    xd = conv_batch_lrelu(xd, {{choice([16,32,64,128])}}, 3,strides=1)
+    xd=Dropout(dropoutrate)(xd)
+    xd = Conv2D(5, (3, 3), strides=1, padding='same',
+                            kernel_regularizer=regularizers.l2(0.0005),
+                            kernel_initializer=initializers.TruncatedNormal(stddev=0.1),
+                            use_bias=False)(xd)
+    vecs=Activation({{choice(['sigmoid','linear'])}})(xd)
+    model = Model(inputs=inputs, outputs=vecs)
+    model.summary()
+
+    # very nice ref. https://github.com/ksanjeevan/dourflow/blob/master/yolov2.py
+    # opt.Adam, opt.RMSprop
+    batch_size={{choice([8,16,32,64,128,256])}}
+    epochs=50
+    lr={{uniform(1E-5,1E-3)}}
+    decay={{uniform(1E-8,1E-2)}}
+    patience=10
+    beta_1=0.9
+    beta_2=0.999
+    
+    early_stopping = EarlyStopping(monitor='val_loss',
+                                  min_delta=0,
+                                  patience=patience,
+                                  mode='min')
+    callbacks = [early_stopping]
+
+    optimizer = opt.Adam(lr=lr,beta_1=beta_1, beta_2=beta_2, decay=decay)
+    model.compile(loss=vec_loss, optimizer=optimizer)
+    history = model.fit(x_train, y_train,
+                        batch_size=batch_size, epochs=epochs,
+                        callbacks=callbacks,
+                        validation_data=(x_test, y_test),verbose=0)
+
+    loss = model.evaluate(x_test, y_test,verbose=0)
+    return {'loss': loss, 'status': STATUS_OK, 'model': model}
+
+def create_model_bottleneck(x_train, y_train, x_test, y_test):
+    szx,szy=64,64
+    smx,smy=8,8
+    epsilon = 1E-8
+    def compute_obj_loss(y_true,y_pred):
+        return tf.keras.backend.binary_crossentropy(y_true[...,-1], y_pred[...,-1])
+
+    def compute_coord_loss(y_true,y_pred):
+        loss_px = tf.squared_difference(y_true[...,0], y_pred[...,0])
+        loss_py = tf.squared_difference(y_true[...,1], y_pred[...,1])
+        loss_wx = tf.squared_difference(y_true[...,2], y_pred[...,2])
+        loss_wy = tf.squared_difference(y_true[...,3], y_pred[...,3])
+
+        loss_pos = tf.add(loss_px,loss_py)
+        loss_width = tf.add(loss_wx,loss_wy)
+
+        coord_loss = tf.add(loss_pos,loss_width)
+        coord_loss = tf.multiply(y_true[...,-1],coord_loss)
+        return coord_loss
+
+    def compute_iou_loss(y_true,y_pred):
+        # ref. https://github.com/ksanjeevan/dourflow/blob/master/net/netloss.py
+        def process_boxes(A):
+            # ALign x-w, y-h
+            A_xy = A[..., 0:2]
+            A_wh = A[..., 2:4]
+
+            A_wh_half = A_wh / 2.
+            # Get x_min, y_min
+            A_mins = A_xy - A_wh_half
+            # Get x_max, y_max
+            A_maxes = A_xy + A_wh_half
+
+            return A_mins, A_maxes, A_wh
+
+        # Process two sets
+        A2_mins, A2_maxes, A2_wh = process_boxes(y_pred)
+        A1_mins, A1_maxes, A1_wh = process_boxes(y_true)
+
+        # Intersection as min(Upper1, Upper2) - max(Lower1, Lower2)
+        intersect_mins  = K.maximum(A2_mins,  A1_mins)
+        intersect_maxes = K.minimum(A2_maxes, A1_maxes)
+
+        # Getting the intersections in the xy (aka the width, height intersection)
+        intersect_wh = K.maximum(intersect_maxes - intersect_mins, 0.)
+
+        # Multiply to get intersecting area
+        intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
+
+        # Values for the single sets
+        true_areas = A1_wh[..., 0] * A1_wh[..., 1]
+        pred_areas = A2_wh[..., 0] * A2_wh[..., 1]
+
+        # Compute union for the IoU
+        union_areas = pred_areas + true_areas - intersect_areas
+
+        # probably not necssary...
+        iou_loss = tf.multiply(y_true[...,-1], tf.truediv(intersect_areas,(union_areas+epsilon)) )
+
+        return iou_loss
+
+
+    def vec_loss(y_true, y_pred):
+
+        lambda_obj = 1.0
+        lambda_coord = 1.0
+        lambda_iou = 1.0
 
         obj_loss = compute_obj_loss(y_true, y_pred)
         obj_loss = tf.multiply(lambda_obj,obj_loss)
@@ -233,15 +398,16 @@ def create_model(x_train, y_train, x_test, y_test):
     loss = model.evaluate(x_test, y_test,verbose=0)
     return {'loss': loss, 'status': STATUS_OK, 'model': model}
 
+
 def data():
     x_train, y_train, _ = make_data(N=1024)
     x_test, y_test, _ = make_data(N=128)
     return x_train, y_train, x_test, y_test
 
-best_run, best_model = optim.minimize(model=create_model,
+best_run, best_model = optim.minimize(model=create_model_fcnn,
                                       data=data,
                                       algo=tpe.suggest,
-                                      max_evals=50,
+                                      max_evals=100,
                                       trials=Trials(),
                                       notebook_name='proto-line-detect-yolo')
 x_train,y_train,x_val,y_val=data()

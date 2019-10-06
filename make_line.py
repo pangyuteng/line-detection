@@ -127,7 +127,7 @@ def make_one_sample(isplot=False,fignum=0,nx=256,ny=256,baseimage=None,minlen=50
 def get_grid(szs=(64,64,64),sms=(8,8)):
     szx,szy,szz=szs
     smx,smy=sms
-    grid = np.zeros((szx,szy)).astype(np.uint)
+    grid = {}#np.zeros((szx,szy)).astype(np.uint)
 
     # assign grid id.
     anchor_dict={}
@@ -138,11 +138,15 @@ def get_grid(szs=(64,64,64),sms=(8,8)):
             code = py + smx*px
             if code not in anchor_dict.keys():
                 anchor_dict[code]=(x,y)
-            grid[x,y]=code
+            grid[(x,y)]=(code,px,py)
 
     #plt.imshow(grid)
     #print(np.unique(grid))
     return grid, anchor_dict
+
+def get_code(px,py,smx):
+    code = py + smx*px
+    return code
 
 def make_data(N=5,szs=(64,64,64),sms=(8,8)):
     
@@ -151,8 +155,8 @@ def make_data(N=5,szs=(64,64,64),sms=(8,8)):
 
     grid, anchor_dict = get_grid(szs=szs,sms=sms)
     X0 = np.zeros((N,szx,szy)).astype(np.uint8)
-    Y0 = np.zeros((N,szz,5)).astype(np.float)
-    Y1 = np.zeros((N,szx,szy,szz)).astype(np.uint8)
+    Y0 = np.zeros((N,smx,smy,5)).astype(np.float)
+    Y1 = np.zeros((N,szx,szy,smx*smy)).astype(np.uint8)
 
     c=0
     for n in range(N*100):
@@ -187,7 +191,7 @@ def make_data(N=5,szs=(64,64,64),sms=(8,8)):
                 aindx=(midx).astype(np.int)
                 aindy=(midy).astype(np.int)
                 
-                ind = grid[aindx,aindy]
+                ind,indx,indy = grid[(aindx,aindy)]
                 # get anchor in grid
                 anchorx,anchory=anchor_dict[ind]
                 
@@ -208,8 +212,8 @@ def make_data(N=5,szs=(64,64,64),sms=(8,8)):
                 yolo = np.array([midx,midy,widthx,widthy,istube])
                 #print(yolo)
                 
-                Y0[c,ind,:]=yolo
-                Y1[c,ind,:,:]=mask
+                Y0[c,indx,indy,:]=yolo
+                Y1[c,:,:,ind]=mask
             
             X0[c,:,:]=terrain
         
@@ -222,7 +226,7 @@ def make_data(N=5,szs=(64,64,64),sms=(8,8)):
             Y0[c,...]=0
             Y1[c,...]=0
         
-        if c>=N:
+        if c>=N-1:
             break
         
         c+=1
