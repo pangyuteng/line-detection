@@ -83,8 +83,8 @@ def compute_iou_loss(y_true,y_pred):
 def vec_loss(y_true, y_pred):
     
     lambda_obj = 1.0
-    lambda_coord = 0.1
-    lambda_iou = 1.0
+    lambda_coord = 1.0
+    lambda_iou = 10.0
     
     obj_loss = compute_obj_loss(y_true, y_pred)
     obj_loss = tf.multiply(lambda_obj,obj_loss)
