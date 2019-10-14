@@ -19,9 +19,13 @@ def imread(fpath):
     direction = img.GetDirection()    
     return arr,spacing,origin,direction
 
-with open('/media/external/Downloads/data/luna16.yml','r') as f:
-    luna16 = yaml.load(f.read())
-
+try:    
+    with open('/media/external/Downloads/data/luna16.yml','r') as f:
+        luna16 = yaml.load(f.read())
+except:
+    traceback.print_exc()
+    luna16=[]
+    
 def get_xray(isplot=False,fignum=0,pngpath=None):
     
     filepath = np.random.choice(luna16)
